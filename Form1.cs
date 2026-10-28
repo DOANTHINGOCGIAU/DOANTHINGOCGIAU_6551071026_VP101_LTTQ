@@ -16,14 +16,26 @@ namespace DOANTHINGOCGIAU_6551071026_VP101_LTTQ
 
         private async void frmCongViec_Load(object sender, EventArgs e)
         {
+            txtMaCongViec.MaxLength = 10;
+            txtLuongThang.MaxLength = 8;
             dgvDanhSachCongViec.AutoGenerateColumns = false;
+            dgvDanhSachCongViec.CellFormatting += dgvDanhSachCongViec_CellFormatting;
+
             DatTrangThaiBanDau();
             await LoadDataAsync();
         }
+        private void dgvDanhSachCongViec_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
+        {
+            if (dgvDanhSachCongViec.Columns[e.ColumnIndex].Name == "colLuongThang" && e.Value != null)
+            {
+                if (long.TryParse(e.Value.ToString(), out long val))
+                {
+                    e.Value = val.ToString("N0");
+                    e.FormattingApplied = true;
+                }
+            }
+        }
 
-        /// <summary>
-        /// Nạp danh sách công việc từ cơ sở dữ liệu lên DataGridView
-        /// </summary>
         private async Task LoadDataAsync()
         {
             try
@@ -39,9 +51,6 @@ namespace DOANTHINGOCGIAU_6551071026_VP101_LTTQ
             }
         }
 
-        /// <summary>
-        /// Đưa giao diện về trạng thái ban đầu để thêm mới
-        /// </summary>
         private void DatTrangThaiBanDau()
         {
             btnThem.Enabled = true;
@@ -55,10 +64,6 @@ namespace DOANTHINGOCGIAU_6551071026_VP101_LTTQ
             txtLuongThang.Clear();
             txtMaCongViec.Focus();
         }
-
-        /// <summary>
-        /// Bật trạng thái khi người dùng chọn 1 dòng trên DataGridView
-        /// </summary>
         private void BatCheDoChonDong()
         {
             btnThem.Enabled = false;
@@ -66,25 +71,17 @@ namespace DOANTHINGOCGIAU_6551071026_VP101_LTTQ
             btnXoa.Enabled = true;
             btnThoat.Enabled = true;
 
-            txtMaCongViec.ReadOnly = true; // Khóa mã công việc vì là khóa chính
-        }
+            txtMaCongViec.ReadOnly = true; 
 
-        /// <summary>
-        /// Ràng buộc TextBox Lương tháng chỉ cho phép nhập số nguyên
-        /// </summary>
         private void txtLuongThang_KeyPress(object sender, KeyPressEventArgs e)
         {
-            // Chỉ cho phép các ký tự số (0-9) và các phím điều khiển như Backspace
+       
             if (!char.IsDigit(e.KeyChar) && !char.IsControl(e.KeyChar))
             {
                 e.Handled = true;
             }
         }
-
-        /// <summary>
-        /// Khi người dùng click chọn 1 dòng trên bảng DataGridView
-        /// </summary>
-        private void dgvDanhSachCongViec_CellClick(object sender, DataGridViewCellEventArgs e)
+private void dgvDanhSachCongViec_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             if (e.RowIndex < 0) return;
 
@@ -96,16 +93,13 @@ namespace DOANTHINGOCGIAU_6551071026_VP101_LTTQ
             BatCheDoChonDong();
         }
 
-        /// <summary>
-        /// Chức năng Thêm công việc mới vào cơ sở dữ liệu
-        /// </summary>
         private async void btnThem_Click(object sender, EventArgs e)
         {
             string ma = txtMaCongViec.Text.Trim();
             string ten = txtTenCongViec.Text.Trim();
             string luong = txtLuongThang.Text.Trim();
 
-            // Kiểm tra rỗng
+
             if (string.IsNullOrWhiteSpace(ma))
             {
                 MessageBox.Show("Mã công việc không được để trống!", "Thiếu thông tin", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -127,7 +121,6 @@ namespace DOANTHINGOCGIAU_6551071026_VP101_LTTQ
                 return;
             }
 
-            // Kiểm tra số nguyên dương > 0
             if (!int.TryParse(luong, out int luongInt) || luongInt <= 0)
             {
                 MessageBox.Show("Lương tháng phải là số nguyên dương lớn hơn 0!", "Dữ liệu không hợp lệ", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -139,7 +132,7 @@ namespace DOANTHINGOCGIAU_6551071026_VP101_LTTQ
             {
                 using var db = new CongViecDbContext();
 
-                // Kiểm tra trùng mã khóa chính
+ 
                 if (await db.CongViecs.AnyAsync(x => x.MaCongViec == ma))
                 {
                     MessageBox.Show($"Mã công việc [{ma}] đã tồn tại trong hệ thống!", "Trùng khóa chính", MessageBoxButtons.OK, MessageBoxIcon.Warning);
@@ -166,10 +159,6 @@ namespace DOANTHINGOCGIAU_6551071026_VP101_LTTQ
                 MessageBox.Show("Lỗi khi thêm công việc: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
-        /// <summary>
-        /// Chức năng Sửa công việc đã chọn
-        /// </summary>
         private async void btnSua_Click(object sender, EventArgs e)
         {
             string ma = txtMaCongViec.Text.Trim();
@@ -228,10 +217,6 @@ namespace DOANTHINGOCGIAU_6551071026_VP101_LTTQ
                 MessageBox.Show("Lỗi khi cập nhật công việc: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
-
-        /// <summary>
-        /// Chức năng Xóa công việc với thông báo xác nhận trước khi xóa
-        /// </summary>
         private async void btnXoa_Click(object sender, EventArgs e)
         {
             string ma = txtMaCongViec.Text.Trim();
@@ -243,7 +228,6 @@ namespace DOANTHINGOCGIAU_6551071026_VP101_LTTQ
                 return;
             }
 
-            // Thông báo xác nhận trước khi xóa
             DialogResult dr = MessageBox.Show(
                 $"Bạn có chắc chắn muốn xóa công việc [{ten}] (Mã: {ma}) không?",
                 "Xác nhận xóa",
@@ -280,17 +264,10 @@ namespace DOANTHINGOCGIAU_6551071026_VP101_LTTQ
             }
         }
 
-        /// <summary>
-        /// Nút Thoát: đóng Form (sẽ kích hoạt sự kiện FormClosing để hỏi xác nhận)
-        /// </summary>
         private void btnThoat_Click(object sender, EventArgs e)
         {
             this.Close();
         }
-
-        /// <summary>
-        /// Bắt sự kiện FormClosing: Luôn hiển thị thông báo xác nhận khi thoát chương trình
-        /// </summary>
         private void frmCongViec_FormClosing(object sender, FormClosingEventArgs e)
         {
             DialogResult dr = MessageBox.Show(
